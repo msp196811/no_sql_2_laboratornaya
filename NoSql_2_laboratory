@@ -1,0 +1,59 @@
+1)
+db.Customers.find({Country:"China"},{"First Name":1, "Last Name": 1}).sort({District:-1})
+
+2)
+mb.runSQLQuery(`
+
+       SELECT "First Name", "Last Name", "District" 
+       FROM Customers
+       WHERE "Country" = 'China'
+       ORDER BY "District" DESC
+       
+`)
+
+3)
+db.Customers.aggregate({
+    $project: { 
+                _id: 0,
+                "First Name": "$First Name",
+                "Last Name": "$Last Name",
+                "Number of watched movies": { $size:"$Rentals" }
+                
+    }
+    
+})
+
+4)
+db.Customers.aggregate([{
+   $lookup: {
+          from: "films",
+          localField: "_id",
+          foreignField: "_id",
+          as: "films_docs"
+        } 
+}, {
+    $match: {
+        films_docs:{
+            $ne: []
+        }
+    }
+}, {
+    $addFields: {
+        films_docs:{
+            $arrayElemAt: ["$films_docs",0]
+        }
+    }
+}, {
+    $match: {
+        "films_docs.Category": "Classics"
+    }
+}, {
+    
+    $project: {
+        "First Name": "$First Name",
+        "Last Name": "$Last Name", 
+        Title: "$films_docs.Title", 
+        Category: "$films_docs.Category"
+    }
+}])
+  
